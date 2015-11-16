@@ -49,16 +49,20 @@ var
   MainForm: TMainForm;
 
 const
+  // Ключевые слова для поиска глобальных переменных
   globalVarConst = 'public static';
+  // Ключевое слово класса
   classConst = ' class ';
+  // Константа названия класса при его отсутствии (для сохранения)
   noClassConst = 'NO_CLASS';
+  // На что заменяется строковые константы
   replaceStringConst = '%S';
 
 implementation
 
 {$R *.dfm}
 
-// ���������� ������ ��� ���������
+// Подготовка текста для обработки
 procedure PrepareText;
 var
   i, strStart, strEnd, posComment: integer;
@@ -73,7 +77,8 @@ begin
       currString := sourceTextMemo.Lines[i];
       if (not multilineComment) then
       begin
-        // ������ ���� ��������� ��������
+
+        // Замена всех строковых констант
         while (Pos('"', currString) <> 0) do
         begin
           strStart := Pos('"', currString);
@@ -87,12 +92,12 @@ begin
             Break;
         end;
 
-        // �������� ������������ ������������
+        // Удаление однострочных комментариев
         posComment := Pos('//', currString);
         if (posComment <> 0) then
           Delete(currString, posComment, Length(currString) - posComment + 1);
 
-        // �������� ������������� ������������
+        // Удаление многострочных комментариев
         posComment := Pos('/*', currString);
         if (posComment <> 0) then
         begin
@@ -116,7 +121,7 @@ begin
   end;
 end;
 
-
+// Замена всех табуляций в строке на пробелы
 procedure ReplaceTabsInString(var str: string);
 begin
   while (Pos(#9, str) <> 0) do
@@ -125,9 +130,10 @@ begin
   end;
 end;
 
+// Поиск глобальных переменных
 procedure FindGlobalVariables(var list: TStringList);
-
-  function FindVariableInString(str: string):string;
+  // "Обрезка" строки до имени переменной
+  function CutStringToVarName(str: string):string;
   var
     j: Integer;
     tempVar: string;
@@ -148,6 +154,7 @@ procedure FindGlobalVariables(var list: TStringList);
     Result := tempVar;
   end;
 
+  // "Нарезка" строки на переменные
   procedure ParseToVariables(str, className: string);
   begin
     if ((Pos(globalVarConst, str) <> 0) and (Pos('(', str) = 0)) then
@@ -155,10 +162,10 @@ procedure FindGlobalVariables(var list: TStringList);
       Delete(str, 1, Pos(globalVarConst, str) + Length(globalVarConst));
       while (Pos(',', str) <> 0) do
       begin
-        list.Add( className +'.'+ FindVariableInString( Copy(str, 1, Pos(',', str) - 1) ) );
+        list.Add( className +'.'+ CutStringToVarName( Copy(str, 1, Pos(',', str) - 1) ) );
         Delete(str, 1, Pos(',', str));
       end;
-      list.Add(className +'.'+ FindVariableInString(str));
+      list.Add(className +'.'+ CutStringToVarName(str));
     end;
   end;
 
@@ -177,10 +184,10 @@ begin
     begin
       sourceString := sourceTextMemo.Lines[i];
 
-      // ������ ��������� ��������
+      // Замена табуляций пробелом
       ReplaceTabsInString(sourceString);
 
-      // ���������� ������ ������
+      // Добавление нового класса
       tempInt := Pos(classConst, ' ' + sourceString);
       if (tempInt <> 0) then
       begin
@@ -195,7 +202,7 @@ begin
         currClass[currClassCounter].bracketsCounter := 0;
       end;
 
-      // ��������� ������ � ����� ������
+      // Обработка вложенности фигурных скобок и, соответственно, классов
       j := 1;
       while ((Pos('{', sourceString) <> 0) or (Pos('}',sourceString) <> 0)) do
       begin
@@ -220,7 +227,10 @@ begin
   end;
 end;
 
+// Подсчёт количества модулей ("функций")
 function CountModules:integer;
+
+  // Проверка на наличие подстроки с учётом предыдущего / следующего символов
   function Check(substr, str: string):Boolean;
   const
     alph = ['a'..'z','A'..'Z','_'];
@@ -239,6 +249,8 @@ function CountModules:integer;
           Result := false;
     end;
   end;
+
+  // Проверка является ли данная строка началом модуля ("функции")
   function IsAModule(str: string):Boolean;
   var
     currStr: string;
@@ -272,6 +284,7 @@ begin
   end;
 end;
 
+// Подсчёт использований глобальных переменных
 function CountVarUsage(list:TStringList):integer;
 var
   varUsageCounter, i, j: integer;
@@ -299,7 +312,7 @@ begin
   end;
 end;
 
-
+// Главная подпрограмма расчёта метрик
 procedure CountMetrics;
 var
   globalVariablesList: TStringList;
