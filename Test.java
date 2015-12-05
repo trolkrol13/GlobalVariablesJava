@@ -1,172 +1,262 @@
-public class MainClass {
+package com.arlib.floatingsearchviewdemo;
 
-	class InternalClass {
-		public static int testVariable = 0;
-		class AnotherInternalClass {
-			public static int internalVar = 0;
-		}
-		public static int testVar = 0;
-	}
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.graphics.Palette;
+import android.util.Log;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
-	public static int variable = 0;
+import com.arlib.floatingsearchview.FloatingSearchView;
+import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
+import com.arlib.floatingsearchviewdemo.data.ColorSuggestion;
+import com.arlib.floatingsearchviewdemo.data.DataHelper;
 
-	public synchronized void Change(int a)
-	{
-		if (a % 2 == 0)variable +=2
-		else MainClass.variable -=2;   
-	}
+import java.util.List;
 
-	public static volatile int valuee = 0;
+// !Added by me!
+public class MyPublicData {
+    public static String appName = "Global Variables Metrics for Java";
+    public static int version = 1;
 
-	synchronized protected void CreateThread()
-	{
-		valuee = new MyThread(); 
-		task.start();
-	}
+    public static void MethodInData() {
+        ClassNamedAForNoReason.someIntWalkingAround = 20;
+        ClassNamedAForNoReason.someIntWalkingAround = 30;
+        ClassNamedAForNoReason.ClassBNestedInA.nestedString = "YAY!";
+    }
+}
 
-	public void run()
-	{ 
-		for(int i=0;i<10;i++)
-		{
-			Change(i);
-			System.out.println("V = "+MainClass.variable+"\t i = "+i+"\t Thread Name "+this.getName());
-		}
-	}
-	
-	
-	public static  int vvvv = 0;
+class ClassNamedAForNoReason {
+    public static int someIntWalkingAround = 10;
+    // Testing one-line comment: public static int anotherIntWalkingAround;
+    void SomeRandomMethod()
+    {
+        MyPublicData.appName = "Why do you change me?";
+        MyPublicData.version = 2;
+    }
 
+    void AnotherRandomMethod()
+    {
+        MyPublicData.appName = "WTF is going on??!";
+        MyPublicData.version = 3;
+    }
+    /*
+    Testing multi-line comment: public static string randomString = "I'm in a comment )";
+    */
 
-	public static void main(String args[])
-	{
-		MainClass mc=new MainClass();
-		mc.CreateThread();
-		mc.CreateThread();
-	}
+    void ThirdShittyMethod()
+    {
+        MyPublicData.appName = "Really? Maybe you'll stop?";
+        MyPublicData.version = 5;
+    }
 
-	public synchronized void Change(int a)
-	{
-		if (a % 2 == 0)vvvv +=2
-		else MainClass.vvvv -=2;   
-	}
+    void FifthMethodForNoReason()
+    {
+        MyPublicData.appName = "Why there is no version 4?";
+        MyPublicData.version = 6;
+    }
 
-	public static volatile int valaaa = 0;
+    void SixthMethod()
+    {
+        MyPublicData.appName = "Testing strings: MyPublicData.version = 7;"
+    }
 
-	synchronized protected void CreateThread()
-	{
-		valaaa = new MyThread(); 
-		task.start();
-	}
+    public static class ClassBNestedInA {
+        public static String nestedString = "Yea";
+    }
+}
+// End of Added by me!!
 
-	public void run()
-	{ 
-		for(int i=0;i<10;i++)
-		{
-			Change(i);
-			System.out.println("V = "+MainClass.vvvv+"\t i = "+i+"\t Thread Name "+this.getName());
-		}
-	}
+public class MainActivity extends AppCompatActivity {
 
+    private final String TAG = "MainActivity";
 
-	public static  int qqqq = 0;
+    private FloatingSearchView mSearchView;
 
+    private ViewGroup mParentView;
+    private TextView mColorNameText;
+    private TextView mColorValueText;
 
-	public static void main(String args[])
-	{
-		MainClass mc=new MainClass();
-		mc.CreateThread();
-		mc.CreateThread();
-	}
+    private DrawerLayout mDrawerLayout;
 
-	public synchronized void Change(int a)
-	{
-		if (a % 2 == 0)qqqq +=2
-		else MainClass.qqqq -=2;   
-	}
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-	public static volatile int vallll = 0;
+        mParentView = (ViewGroup)findViewById(R.id.parent_view);
 
-	synchronized protected void CreateThread()
-	
-{		vallll = new MyThread(); 
-		task.start();
-	}
+        mSearchView = (FloatingSearchView)findViewById(R.id.floating_search_view);
+        mColorNameText = (TextView)findViewById(R.id.color_name_text);
+        mColorValueText = (TextView)findViewById(R.id.color_value_text);
 
-	public void run()
-	{ 
-		for(int i=0;i<10;i++)
-		{
-			Change(i);
-			System.out.println("V = "+MainClass.qqqq+"\t i = "+i+"\t Thread Name "+this.getName());
-		}
-	}
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
 
+        //sets the background color
+        refreshBackgroundColor("Blue", "#1976D2");
 
-	public static  int wwww = 0;
+        mSearchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
+            @Override
+            public void onSearchTextChanged(String oldQuery, final String newQuery) {
 
+                if (!oldQuery.equals("") && newQuery.equals("")) {
+                    mSearchView.clearSuggestions();
+                } else {
 
-	public static void main(String args[])
-	{
-		MainClass mc=new MainClass();
-		mc.CreateThread();
-		mc.CreateThread();
-	}
+                    //this shows the top left circular progress
+                    //you can call it where ever you want, but
+                    //it makes sense to do it when loading something in
+                    //the background.
+                    mSearchView.showProgress();
 
-	public synchronized void Change(int a)
-	{
-		if (a % 2 == 0)wwww +=2
-		else MainClass.wwww -=2;   
-	}
+                    //simulates a query call to a data source
+                    //with a new query.
+                    DataHelper.find(MainActivity.this, newQuery, new DataHelper.OnFindResultsListener() {
 
-	public static volatile int vayy = 0;
+                        @Override
+                        public void onResults(List<ColorSuggestion> results) {
 
-	synchronized protected void CreateThread()
-	{
-		vayy = new MyThread(); 
-		task.start();
-	}
+                            //this will swap the data and
+                            //render the collapse/expand animations as necessary
+                            mSearchView.swapSuggestions(results);
 
-	public void run()
-	{ 
-		for(int i=0;i<10;i++)
-		{
-			Change(i);
-			System.out.println("V = "+MainClass.wwww+"\t i = "+i+"\t Thread Name "+this.getName());
-		}
-	}
-	
+                            //let the users know that the background
+                            //process has completed
+                            mSearchView.hideProgress();
+                        }
+                    });
+                }
 
+                Log.d(TAG, "onSearchTextChanged()");
+            }
+        });
 
-	public static  int tttt = 0;
+        mSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
+            @Override
+            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
 
+                ColorSuggestion colorSuggestion = (ColorSuggestion) searchSuggestion;
+                refreshBackgroundColor(colorSuggestion.getColor().getName(), colorSuggestion.getColor().getHex());
 
-	public static void main(String args[])
-	{
-		MainClass mc=new MainClass();
-		mc.CreateThread();
-		mc.CreateThread();
-	}
+                Log.d(TAG, "onSuggestionClicked()");
+            }
 
-	public synchronized void Change(int a)
-	{
-		if (a % 2 == 0)tttt +=2
-		else MainClass.tttt -=2;   
-	}
+            @Override
+            public void onSearchAction() {
 
-	public static volatile int vapp = 0;
+                Log.d(TAG, "onSearchAction()");
+            }
+        });
 
-	synchronized protected void CreateThread()
-	{
-		vapp = new MyThread(); 
-		task.start();
-	}
+        mSearchView.setOnFocusChangeListener(new FloatingSearchView.OnFocusChangeListener() {
+            @Override
+            public void onFocus() {
 
-	public void run()
-	{ 
-		for(int i=0;i<10;i++)
-		{
-			Change(i);
-			System.out.println("V = "+MainClass.tttt+"\t i = "+i+"\t Thread Name "+this.getName());
-		}
-	}
+                mSearchView.swapSuggestions(DataHelper.getHistory(MainActivity.this, 3));
+
+                Log.d(TAG, "onFocus()");
+            }
+
+            @Override
+            public void onFocusCleared() {
+
+                Log.d(TAG, "onFocusCleared()");
+            }
+        });
+
+        //handle menu clicks the same way as you would
+        //in a regular activity
+        mSearchView.setOnMenuItemClickListener(new FloatingSearchView.OnMenuItemClickListener() {
+            @Override
+            public void onMenuItemSelected(MenuItem item) {
+
+                switch (item.getItemId()) {
+                    case R.id.action_show_menu:
+                        mSearchView.setLeftShowMenu(true);
+                        break;
+                    case R.id.action_hide_menu:
+                        mSearchView.setLeftShowMenu(false);
+                        break;
+                }
+            }
+        });
+
+        mSearchView.setOnLeftMenuClickListener(new FloatingSearchView.OnLeftMenuClickListener() {
+            @Override
+            public void onMenuOpened() {
+
+                mDrawerLayout.openDrawer(GravityCompat.START);
+            }
+
+            @Override
+            public void onMenuClosed() {
+                mDrawerLayout.closeDrawer(GravityCompat.START);
+            }
+        });
+
+        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {}
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+
+                //since the drawer might have opened as a results of
+                //a click on the left menu, we need to make sure
+                //to close it right after the drawer opens, so that
+                //it is closed when the drawer is  closed.
+                mSearchView.closeMenu(false);
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) { }
+
+            @Override
+            public void onDrawerStateChanged(int newState) { }
+        });
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        //this is needed in order for voice recognition to work
+        mSearchView.onHostActivityResult(requestCode, resultCode, data);
+    }
+
+    private void refreshBackgroundColor(String colorName, String colorValue){
+
+        int color = Color.parseColor(colorValue);
+        Palette.Swatch swatch = new Palette.Swatch(color, 0);
+
+        mColorNameText.setTextColor(swatch.getTitleTextColor());
+        mColorNameText.setText(colorName);
+
+        mColorValueText.setTextColor(swatch.getBodyTextColor());
+        mColorValueText.setText(colorValue);
+
+        mParentView.setBackgroundColor(color);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP)
+            getWindow().setStatusBarColor(getDarkerColor(color, .8f));
+
+    }
+
+    private static int getDarkerColor(int color, float factor) {
+
+        int a = Color.alpha(color);
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
+
+        return Color.argb(a, Math.max((int)(r * factor), 0), Math.max((int)(g * factor), 0),
+                Math.max((int)(b * factor), 0));
+    }
+
 }

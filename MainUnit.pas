@@ -77,7 +77,6 @@ begin
       currString := sourceTextMemo.Lines[i];
       if (not multilineComment) then
       begin
-
         // Замена всех строковых констант
         while (Pos('"', currString) <> 0) do
         begin
@@ -102,7 +101,13 @@ begin
         if (posComment <> 0) then
         begin
           multilineComment := true;
-          Delete(currString, posComment, Length(currString) - posComment + 1);
+          if (Pos('*/', currString) <> 0) then
+          begin
+            Delete(currString, posComment, Pos('*/', currString) - posComment + 2);
+            multilineComment := false;
+          end
+          else
+            Delete(currString, posComment, Length(currString) - posComment + 1);
         end;
       end
       else
@@ -154,10 +159,10 @@ procedure FindGlobalVariables(var list: TStringList);
     Result := tempVar;
   end;
 
-  // "Нарезка" строки на переменные
+  // Парсинг переменных в строке
   procedure ParseToVariables(str, className: string);
   begin
-    if ((Pos(globalVarConst, str) <> 0) and (Pos('(', str) = 0)) then
+    if ((Pos(globalVarConst, str) <> 0) and (Pos('(', str) = 0) and (Pos('class', str) = 0)) then
     begin
       Delete(str, 1, Pos(globalVarConst, str) + Length(globalVarConst));
       while (Pos(',', str) <> 0) do
@@ -227,9 +232,8 @@ begin
   end;
 end;
 
-// Подсчёт количества модулей ("функций")
+// Подсчёт количества методов
 function CountModules:integer;
-
   // Проверка на наличие подстроки с учётом предыдущего / следующего символов
   function Check(substr, str: string):Boolean;
   const
@@ -242,15 +246,15 @@ function CountModules:integer;
     begin
       i := Pos(substr, str);
       if (i > 1) then
-        if (str[i-1] in alph) then
+        if not(str[i-1] in alph) then
           Result := false;
       if (i < Length(str)) then
-        if (str[i+1] in alph) then
+        if not(str[i+1] in alph) then
           Result := false;
     end;
   end;
 
-  // Проверка является ли данная строка началом модуля ("функции")
+ // Проверка является ли данная строка началом метода
   function IsAModule(str: string):Boolean;
   var
     currStr: string;
